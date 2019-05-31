@@ -1,0 +1,10 @@
+README.md
+setup.py
+src/ml_optic/__init__.py
+src/ml_optic/connection.py
+src/ml_optic/magic.py
+src/ml_optic.egg-info/PKG-INFO
+src/ml_optic.egg-info/SOURCES.txt
+src/ml_optic.egg-info/dependency_links.txt
+src/ml_optic.egg-info/not-zip-safe
+src/ml_optic.egg-info/top_level.txt
