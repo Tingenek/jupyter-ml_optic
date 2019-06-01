@@ -5,6 +5,8 @@ from requests_toolbelt.multipart import decoder
 import pandas as pd
 from pandas.io.json import json_normalize
 import json
+from io import StringIO
+import csv
 # ----------------------------------------------------------------------
 
 class ConfigStruct:
@@ -23,8 +25,10 @@ class MLRESTConnection(object):
     def call_rest(self, args, code):
         df = None
         result = self._eval_code(code)
-        optic = json.dumps(result[0]['data'])
-        df = self._eval_optic(optic)
+        if result is not None:
+            optic = json.dumps(result[0]['data'])
+            df = self._eval_optic(optic)
+            print("Returned {} results".format(len(df)))
         return df
 
     def _eval_code(self, code):
@@ -55,9 +59,9 @@ class MLRESTConnection(object):
     def _eval_optic(self, optic):
         session = requests.session()
         session.auth = HTTPDigestAuth(self.cfg.user, self.cfg.password)
-        params = {'output': 'array','column-types' : 'header'}
+        params = {'output': 'object','column-types' : 'header'}
         plan = optic
-        headers = {'Accept': 'application/json','Content-type': 'application/json'}
+        headers = {'Accept': 'text/csv','Content-type': 'application/json'}
 
         uri = 'http://%s:%s/v1/rows' % (self.cfg.host, self.cfg.port)
         data = None
@@ -74,7 +78,8 @@ class MLRESTConnection(object):
             print(f'Other error occurred: {err}')  # Python 3.6
         else:
             #Comment out these rows just to get Json
-            data= pd.DataFrame.from_dict(result.json(), orient='columns')
+            #data= pd.DataFrame.from_dict(result.json(), orient='columns')
+            data= pd.read_csv(StringIO(result.text),skipinitialspace = True, quotechar = '"')
             #logging.info(code)
 
         return data
@@ -82,7 +87,6 @@ class MLRESTConnection(object):
     def _get_multi_result(self,result):
         out = []
         multipart_data = decoder.MultipartDecoder.from_response(result)
-        print("Returned {} results".format(len(multipart_data.parts)))
         for part in multipart_data.parts:
             ctype = part.headers[b'Content-Type'].decode('utf-8')
             raw = part.content

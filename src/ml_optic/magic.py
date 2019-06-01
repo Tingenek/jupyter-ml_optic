@@ -7,6 +7,7 @@ from IPython.core.magic_arguments import argument, magic_arguments, parse_argstr
 import requests
 from requests.auth import HTTPDigestAuth
 from requests_toolbelt.multipart import decoder
+from IPython.core.display import display
 
 from .connection import MLRESTConnection
 
@@ -26,9 +27,13 @@ class MarkLogicOpticMagic(Magics):
     @magic_arguments()
     @cell_magic
     @argument(
-        '-o', '--output',default='ml_optic',
+        '-v', '--variable',default='ml_optic',
         help='output to a var, default is ml_optic'
     )
+    @argument(
+        '-o', '--output',default='ml_optic',
+        help='output format, default is pandas DataFrame'
+        )
     @argument(
         'connection', default=None,nargs='?',
         help='connection string; can be empty if set previously.'
@@ -50,10 +55,10 @@ class MarkLogicOpticMagic(Magics):
             result = self.connection.call_rest(args, cell)
             if result is not None:
                 df = result
-                print('DataFrame returned in ' + args.output)
+                print(args.output + '.head() returns:')
+                display(result.head())
             else:
-                
-                print('Empty DataFrame returned in ' + args.output)
+                print('No results')
             self.shell.user_ns.update({args.output: df})
 
 
