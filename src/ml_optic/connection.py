@@ -24,25 +24,43 @@ class MLRESTConnection(object):
 
     def call_rest(self, args, code):
         df = None
-        result = self._eval_code(code)
+        optic = None
+        self.cfg.scheme = args.parser
+        result = self._eval_code(code,args)
         if result is not None:
-            optic = json.dumps(result[0]['data'])
-            df = self._eval_optic(optic)
-            print("Returned {} results".format(len(df)))
+            try:
+                optic = json.dumps(result[0]['data'])
+            except Exception as err:
+                print("Failed to compile {} query".format(args.parser))
+
+            if optic is not None:
+                df = self._eval_optic(optic)
+                print("Returned {} results in {}".format(len(df),args.variable))
+        else:
+            print("Failed to compile {} query".format(self.cfg.scheme))
         return df
 
-    def _eval_code(self, code):
+    def _eval_code(self, code,args):
         session = requests.session()
         session.auth = HTTPDigestAuth(self.cfg.user, self.cfg.password)
         # replace result with export
-        code = code.replace('op:result','op:export')
-        payload = {'xquery': code}
+
+        scheme = args.parser
+        # replace result with export
+        if scheme == 'xquery':
+            code = code.replace('result()','export()')
+            code = "xquery version '1.0-ml';\nimport module namespace op='http://marklogic.com/optic' at '/MarkLogic/optic.xqy';\n\n" + code
+        if scheme == 'javascript':
+            code = code.replace('result()','export()')
+            code =  "'use strict'\nconst op = require('/MarkLogic/optic');\n\n" + code
+
+        #(code)
+        payload = {scheme: code}
 
         #logging.info(code)
 
         uri = 'http://%s:%s/v1/eval' % (self.cfg.host, self.cfg.port)
         data = None
-        #print(code)
         try:
             result = session.post(uri, data=payload)
             # If the response was successful, no Exception will be raised

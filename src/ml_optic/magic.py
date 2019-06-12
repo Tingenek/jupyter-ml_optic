@@ -22,18 +22,19 @@ class MarkLogicOpticMagic(Magics):
         # You must call the parent constructor
         super(MarkLogicOpticMagic, self).__init__(shell)
         self.connection = MLRESTConnection()
-        self.ret_var = 'result_var'
+        self.variable = 'ml_optic'
+        self.parser = 'javascript'
 
     @magic_arguments()
     @cell_magic
     @argument(
-        '-v', '--variable',default='ml_optic',
+        '-v', '--variable',default=None,
         help='output to a var, default is ml_optic'
     )
     @argument(
-        '-o', '--output',default='ml_optic',
-        help='output format, default is pandas DataFrame'
-        )
+        '-p', '--parser',default=None,
+        help='parser, xquery or javascript. default is javascript'
+    )
     @argument(
         'connection', default=None,nargs='?',
         help='connection string; can be empty if set previously.'
@@ -42,8 +43,19 @@ class MarkLogicOpticMagic(Magics):
         user_ns = self.shell.user_ns.copy()
         user_ns.update(local_ns)
         args = parse_argstring(self.ml_optic, line)
-        args.mode='fetch'
+        if args.parser is not None:
+            self.parser = args.parser
+        else:
+            args.parser = self.parser
+
+        if args.variable is not None:
+            self.variable = args.variable
+        else:
+            args.variable = self.variable
+
+
         df = None
+        result = None
         if cell is None:
             print("No contents")
         else:
@@ -51,15 +63,19 @@ class MarkLogicOpticMagic(Magics):
             if args.connection is not None:
                 self.connection.endpoint(args.connection)
             #expand out {var} in cell body
-            cell = cell.format(**user_ns)
-            result = self.connection.call_rest(args, cell)
+            try:
+                cell = cell.format(**user_ns)
+                result = self.connection.call_rest(args, cell)
+            except Exception as err:
+                print(f'Other error: {err}')  # Python 3.6
+
             if result is not None:
                 df = result
-                print(args.output + '.head() returns:')
+                print(args.variable + '.head() returns:')
                 display(result.head())
             else:
                 print('No results')
-            self.shell.user_ns.update({args.output: df})
+            self.shell.user_ns.update({args.variable: df})
 
 
 
