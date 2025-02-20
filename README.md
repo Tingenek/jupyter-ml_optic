@@ -22,7 +22,7 @@ The magic needs a connection string to a working MarkLogic endpoint along with u
 - http://marklogic.com/xdmp/privileges/rest-reader
 
 In a cell as the first line put the magic, for example:
-%%ml_optic op://admin:admin@localhost:8000  
+%%ml_optic http[s]://admin:admin@localhost:8000  
 The rest of the cell contains the Optic query, exactly as it would look in Query Console. Note it must finish with op:result()
 
 #### Connections and Output
@@ -41,7 +41,7 @@ In the case of XQuery and Javascript, the optic library import will get inserted
 
 List all TDEs using the standard port using xquery as parser and default var.
 ```
-%%ml_optic op://admin:admin@localhost:8000 -p xquery
+%%ml_optic http://admin:admin@localhost:8000 -p xquery
 op:from-view("sys", "sys_tables",'')
   => op:result()
 ```

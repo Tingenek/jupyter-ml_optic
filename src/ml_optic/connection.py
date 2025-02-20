@@ -18,47 +18,46 @@ class ConfigStruct:
 class MLRESTConnection(object):
 
     def __init__(self):
-        self.cfg = ConfigStruct(host='localhost', port='8000', user='admin', password='admin', scheme='xquery', action='eval', param=None)
+        self.cfg = ConfigStruct(host='localhost', port='8000', user='admin', password='admin', scheme='', action='eval', param=None)
         self.search = ConfigStruct(start='1', page='10')
 
     def call_rest(self, args, code):
         df = None
         optic = None
-        self.cfg.scheme = args.parser
+        #self.cfg.scheme = args.parser
         result = self._eval_code(code,args)
         if result is not None:
             try:
                 optic = json.dumps(result[0]['data'])
             except Exception as err:
-                print("Failed to compile {} query".format(args.parser))
+                print("Failed to compile query")
 
             if optic is not None:
                 df = self._eval_optic(optic)
                 print("Returned {} results in {}".format(len(df),args.variable))
         else:
-            print("Failed to compile {} query".format(self.cfg.scheme))
+            print("Query returned no result")
         return df
 
     def _eval_code(self, code,args):
         session = requests.session()
         session.auth = HTTPDigestAuth(self.cfg.user, self.cfg.password)
         # replace result with export
-
-        scheme = args.parser
+        #scheme = args.parser
         # replace result with export
-        if scheme == 'xquery':
+        if args.parser == 'xquery':
             code = code.replace('result()','export()')
             code = "xquery version '1.0-ml';\nimport module namespace op='http://marklogic.com/optic' at '/MarkLogic/optic.xqy';\n\n" + code
-        if scheme == 'javascript':
+        if args.parser == 'javascript':
             code = code.replace('result()','export()')
             code =  "'use strict'\nconst op = require('/MarkLogic/optic');\n\n" + code
 
         #(code)
-        payload = {scheme: code}
+        payload = {args.parser: code}
 
         #logging.info(code)
 
-        uri = 'http://%s:%s/v1/eval' % (self.cfg.host, self.cfg.port)
+        uri = '%s://%s:%s/v1/eval' % (self.cfg.scheme, self.cfg.host, self.cfg.port)
         data = None
         try:
             result = session.post(uri, data=payload)
@@ -80,7 +79,7 @@ class MLRESTConnection(object):
         plan = optic
         headers = {'Accept': 'text/csv','Content-type': 'application/json'}
 
-        uri = 'http://%s:%s/v1/rows' % (self.cfg.host, self.cfg.port)
+        uri = '%s://%s:%s/v1/rows' % (self.cfg.scheme, self.cfg.host, self.cfg.port)
         data = None
         #print(code)
         try:

@@ -8,4 +8,5 @@ src/ml_optic.egg-info/PKG-INFO
 src/ml_optic.egg-info/SOURCES.txt
 src/ml_optic.egg-info/dependency_links.txt
 src/ml_optic.egg-info/not-zip-safe
+src/ml_optic.egg-info/requires.txt
 src/ml_optic.egg-info/top_level.txt
